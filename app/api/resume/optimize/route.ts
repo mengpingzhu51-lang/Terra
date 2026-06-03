@@ -1,4 +1,5 @@
-import { ai, optimizeSchema, parseGenerativeJSON } from "@/lib/ai";
+import { optimizeSchema } from "@/lib/ai";
+import { generateStructuredObject } from "@/lib/agent/structured-agent";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -29,17 +30,13 @@ export async function POST(req: Request) {
     【评估漏洞分析】：
     ${JSON.stringify(evaluationResult, null, 2)}`;
 
-    const result = await ai.models.generateContent({
-      model: "gemini-3.5-flash",
-      contents: prompt,
-      config: {
-        systemInstruction: "你是一个世界知名科技大厂前资深招聘专家，也是一名极致的简历金牌修改师。你十分懂得在维持真实底线的基础上，优化表述格式。让工作产出饱含架构技术硬核与极佳的量化数字、对齐各种热点敏捷或现代最佳工具生态。请改写候选人简历中过于冗长琐碎或枯燥、缺少数字的工作经历与项目职责，并输出前后的diff对比以便用户查看。结果必须完全满足JSON schema定义，中文回答。",
-        responseMimeType: "application/json",
-        responseSchema: optimizeSchema,
-      }
+    const parsed = await generateStructuredObject({
+      systemPrompt: "你是一个世界知名科技大厂前资深招聘专家，也是一名极致的简历金牌修改师。你十分懂得在维持真实底线的基础上，优化表述格式。让工作产出饱含架构技术硬核与极佳的量化数字、对齐各种热点敏捷或现代最佳工具生态。请改写候选人简历中过于冗长琐碎或枯燥、缺少数字的工作经历与项目职责，并输出前后的diff对比以便用户查看。结果必须完全满足JSON schema定义，中文回答。",
+      userPrompt: prompt,
+      schema: optimizeSchema,
+      threadId: `resume-optimize-${Date.now()}`,
     });
 
-    const parsed = parseGenerativeJSON(result.text);
     return Response.json(parsed);
   } catch (error: any) {
     console.error("Optimization error:", error);

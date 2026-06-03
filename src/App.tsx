@@ -55,6 +55,7 @@ export default function App() {
   const [jds, setJds] = useState<JobDescription[]>([]);
   const [evaluations, setEvaluations] = useState<Evaluation[]>([]);
   const [records, setRecords] = useState<GenerationRecord[]>([]);
+  const [remoteLoaded, setRemoteLoaded] = useState(false);
 
   // 4. Temporary selection states
   const [selectedResume, setSelectedResume] = useState<Resume | null>(null);
@@ -139,13 +140,100 @@ export default function App() {
     localStorage.setItem("terra_db_" + key, JSON.stringify(data));
   };
 
+  const syncAllStorage = (state: {
+    resumes: Resume[];
+    jds: JobDescription[];
+    evaluations: Evaluation[];
+    records: GenerationRecord[];
+  }) => {
+    syncStorage("resumes", state.resumes);
+    syncStorage("jds", state.jds);
+    syncStorage("evaluations", state.evaluations);
+    syncStorage("records", state.records);
+  };
+
+  const hasRemoteData = (state: {
+    resumes: Resume[];
+    jds: JobDescription[];
+    evaluations: Evaluation[];
+    records: GenerationRecord[];
+  }) => state.resumes.length > 0 || state.jds.length > 0 || state.evaluations.length > 0 || state.records.length > 0;
+
+  useEffect(() => {
+    if (!currentUser) {
+      setRemoteLoaded(false);
+      return;
+    }
+
+    let cancelled = false;
+    const loadRemoteState = async () => {
+      try {
+        const response = await fetch(`/api/data/state?userId=${encodeURIComponent(currentUser.id)}`);
+        const data = await response.json();
+        if (!response.ok || !data.configured) return;
+
+        const remoteState = {
+          resumes: data.resumes ?? [],
+          jds: data.jds ?? [],
+          evaluations: data.evaluations ?? [],
+          records: data.records ?? [],
+        };
+
+        if (!cancelled && hasRemoteData(remoteState)) {
+          setResumes(remoteState.resumes);
+          setJds(remoteState.jds);
+          setEvaluations(remoteState.evaluations);
+          setRecords(remoteState.records);
+          syncAllStorage(remoteState);
+        }
+      } catch (error) {
+        console.warn("Supabase state load skipped:", error);
+      } finally {
+        if (!cancelled) setRemoteLoaded(true);
+      }
+    };
+
+    setRemoteLoaded(false);
+    loadRemoteState();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [currentUser?.id]);
+
+  useEffect(() => {
+    if (!currentUser || !remoteLoaded) return;
+
+    const timer = window.setTimeout(async () => {
+      try {
+        await fetch('/api/data/state', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: currentUser.id,
+            resumes,
+            jds,
+            evaluations,
+            records,
+          }),
+        });
+      } catch (error) {
+        console.warn("Supabase state sync skipped:", error);
+      }
+    }, 500);
+
+    return () => window.clearTimeout(timer);
+  }, [currentUser?.id, remoteLoaded, resumes, jds, evaluations, records]);
+
   // Auth logins
   const handleLoginSuccess = (user: User) => {
+    setRemoteLoaded(false);
     setCurrentUser(user);
     localStorage.setItem('terra_user', JSON.stringify(user));
   };
 
   const handleLogout = () => {
+    setRemoteLoaded(false);
     setCurrentUser(null);
     localStorage.removeItem('terra_user');
   };
