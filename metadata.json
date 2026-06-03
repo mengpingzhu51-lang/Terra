@@ -1,0 +1,8 @@
+{
+  "name": "Terra 简历",
+  "description": "智能中文简历生成、评估与多岗位适配定制平台，支持简历解析、JD匹配度打分及一键针对性改写。",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
