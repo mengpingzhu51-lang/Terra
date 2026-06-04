@@ -25,6 +25,7 @@ import ResumeEditor from './components/ResumeEditor';
 import JobAnalysis from './components/JobAnalysis';
 import EvaluationResult from './components/EvaluationResult';
 import HistoryLogs from './components/HistoryLogs';
+import ChatView from './components/ChatView';
 
 // Icon imports
 import { 
@@ -39,7 +40,8 @@ import {
   Sparkles,
   Layers,
   ArrowRight,
-  Trash2
+  Trash2,
+  MessageCircle
 } from 'lucide-react';
 
 export default function App() {
@@ -47,7 +49,9 @@ export default function App() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
 
   // 2. Navigation State
-  const [currentView, setCurrentView] = useState<'dashboard' | 'resumes' | 'jds' | 'history' | 'edit_resume' | 'evaluate' | 'parse'>('dashboard');
+  const [currentView, setCurrentView] = useState<'dashboard' | 'resumes' | 'jds' | 'history' | 'edit_resume' | 'evaluate' | 'parse' | 'chat'>('dashboard');
+
+  const chatEnabled = process.env.NEXT_PUBLIC_ENABLE_CHAT === 'true';
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
   // 3. Database State loaded from localStorage or initialized with defaults
@@ -578,6 +582,20 @@ export default function App() {
               <History className="w-4 h-4" />
               历史审计明细
             </button>
+
+            {chatEnabled && (
+              <button
+                onClick={() => { setCurrentView('chat'); }}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold transition-all ${
+                  currentView === 'chat'
+                    ? 'bg-primary text-white shadow-sm'
+                    : 'text-neutral-500 hover:bg-neutral-50 hover:text-neutral-800'
+                }`}
+              >
+                <MessageCircle className="w-4 h-4" />
+                AI 对话
+              </button>
+            )}
           </nav>
         </div>
 
@@ -625,8 +643,12 @@ export default function App() {
       </header>
 
       {/* 2. Main content router stage */}
-      <main className="flex-1 p-4 md:p-8 overflow-y-auto min-h-screen">
-        
+      <main className={`flex-1 p-4 md:p-8 overflow-y-auto ${currentView === 'chat' ? '' : 'min-h-screen'}`}>
+
+        {currentView === 'chat' && chatEnabled && (
+          <ChatView />
+        )}
+
         {currentView === 'dashboard' && (
           <Dashboard
             resumes={resumes}
