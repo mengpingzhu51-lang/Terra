@@ -147,6 +147,8 @@ export interface GenerationRecord {
 
 export interface User {
   id: string;
-  phone: string;
+  email: string;
+  name: string;
+  avatar?: string;
   createdAt: string;
 }

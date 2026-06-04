@@ -584,12 +584,16 @@ export default function App() {
         {/* User logout section */}
         <div className="p-4 border-t border-neutral-100 space-y-4">
           <div className="flex items-center gap-3 px-2">
-            <div className="w-8 h-8 rounded-full bg-neutral-100 flex items-center justify-center text-neutral-500">
-              <UserIcon className="w-4 h-4" />
+            <div className="w-8 h-8 rounded-full bg-neutral-100 flex items-center justify-center text-neutral-500 overflow-hidden">
+              {currentUser.avatar ? (
+                <img src={currentUser.avatar} alt="" className="w-full h-full object-cover rounded-full" />
+              ) : (
+                <UserIcon className="w-4 h-4" />
+              )}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-bold text-neutral-800 truncate font-mono">{currentUser.phone}</p>
-              <span className="text-[9px] text-neutral-400">DEMO ROLE — USER</span>
+              <p className="text-xs font-bold text-neutral-800 truncate">{currentUser.name}</p>
+              <span className="text-[9px] text-neutral-400 truncate block">{currentUser.email}</span>
             </div>
           </div>
 
