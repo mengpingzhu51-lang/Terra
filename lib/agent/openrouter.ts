@@ -1,5 +1,10 @@
 import { ChatOpenAI } from "@langchain/openai";
 
+// OpenRouter 使用 OpenAI 兼容接口，需要把 OPENROUTER_API_KEY 映射到 OPENAI_API_KEY
+if (process.env.OPENROUTER_API_KEY && !process.env.OPENAI_API_KEY) {
+  process.env.OPENAI_API_KEY = process.env.OPENROUTER_API_KEY;
+}
+
 export function createOpenRouterModel() {
   if (!process.env.OPENROUTER_API_KEY) {
     console.warn("WARNING: OPENROUTER_API_KEY environment variable is not defined.");

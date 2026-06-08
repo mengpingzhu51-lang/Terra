@@ -11,12 +11,6 @@ import {
   Evaluation, 
   GenerationRecord 
 } from './types';
-import { 
-  INITIAL_RESUMES, 
-  INITIAL_JDS, 
-  INITIAL_EVALUATIONS, 
-  INITIAL_RECORDS 
-} from './data';
 
 // Component imports
 import LoginScreen from './components/LoginScreen';
@@ -52,6 +46,7 @@ export default function App() {
   const [currentView, setCurrentView] = useState<'dashboard' | 'resumes' | 'jds' | 'history' | 'edit_resume' | 'evaluate' | 'parse' | 'chat'>('dashboard');
 
   const chatEnabled = process.env.NEXT_PUBLIC_ENABLE_CHAT === 'true';
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
   // 3. Database State loaded from localStorage or initialized with defaults
@@ -109,33 +104,29 @@ export default function App() {
           localStorage.setItem(keyPrefix + "resumes", JSON.stringify(parsed));
         }
       } catch (err) {
-        setResumes(INITIAL_RESUMES);
-        localStorage.setItem(keyPrefix + "resumes", JSON.stringify(INITIAL_RESUMES));
+        setResumes([]);
+        localStorage.setItem(keyPrefix + "resumes", JSON.stringify([]));
       }
     } else {
-      setResumes(INITIAL_RESUMES);
-      localStorage.setItem(keyPrefix + "resumes", JSON.stringify(INITIAL_RESUMES));
+      setResumes([]);
     }
 
     if (lsJds) {
       setJds(JSON.parse(lsJds));
     } else {
-      setJds(INITIAL_JDS);
-      localStorage.setItem(keyPrefix + "jds", JSON.stringify(INITIAL_JDS));
+      setJds([]);
     }
 
     if (lsEvaluations) {
       setEvaluations(JSON.parse(lsEvaluations));
     } else {
-      setEvaluations(INITIAL_EVALUATIONS);
-      localStorage.setItem(keyPrefix + "evaluations", JSON.stringify(INITIAL_EVALUATIONS));
+      setEvaluations([]);
     }
 
     if (lsRecords) {
       setRecords(JSON.parse(lsRecords));
     } else {
-      setRecords(INITIAL_RECORDS);
-      localStorage.setItem(keyPrefix + "records", JSON.stringify(INITIAL_RECORDS));
+      setRecords([]);
     }
   }, []);
 
@@ -600,28 +591,59 @@ export default function App() {
         </div>
 
         {/* User logout section */}
-        <div className="p-4 border-t border-neutral-100 space-y-4">
-          <div className="flex items-center gap-3 px-2">
-            <div className="w-8 h-8 rounded-full bg-neutral-100 flex items-center justify-center text-neutral-500 overflow-hidden">
+        <div className="p-4 border-t border-neutral-100 relative">
+          <button
+            onClick={() => setUserMenuOpen(!userMenuOpen)}
+            className="w-full flex items-center gap-3 px-2 hover:bg-neutral-50 rounded-lg transition-colors"
+          >
+            <div className="w-8 h-8 rounded-full bg-neutral-100 flex items-center justify-center text-neutral-500 overflow-hidden shrink-0">
               {currentUser.avatar ? (
-                <img src={currentUser.avatar} alt="" className="w-full h-full object-cover rounded-full" />
+                <img 
+                  src={currentUser.avatar} 
+                  alt="" 
+                  className="w-full h-full object-cover rounded-full" 
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = 'none';
+                    const parent = (e.target as HTMLImageElement).parentElement;
+                    if (parent) {
+                      const icon = document.createElement('div');
+                      icon.className = 'flex items-center justify-center w-full h-full';
+                      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                      svg.setAttribute('class', 'w-4 h-4');
+                      svg.setAttribute('viewBox', '0 0 24 24');
+                      svg.setAttribute('fill', 'none');
+                      svg.setAttribute('stroke', 'currentColor');
+                      svg.setAttribute('stroke-width', '2');
+                      svg.innerHTML = '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle>';
+                      icon.appendChild(svg);
+                      parent.appendChild(icon);
+                    }
+                  }}
+                />
               ) : (
                 <UserIcon className="w-4 h-4" />
               )}
             </div>
-            <div className="flex-1 min-w-0">
+            <div className="flex-1 min-w-0 text-left">
               <p className="text-xs font-bold text-neutral-800 truncate">{currentUser.name}</p>
               <span className="text-[9px] text-neutral-400 truncate block">{currentUser.email}</span>
             </div>
-          </div>
-
-          <button
-            onClick={handleLogout}
-            className="w-full text-left flex items-center gap-3 px-4 py-2.5 text-xs text-rose-500 hover:bg-rose-50 rounded-xl font-bold transition-all"
-          >
-            <LogOut className="w-4 h-4" />
-            安全退出系统
           </button>
+
+          {userMenuOpen && (
+            <div className="absolute bottom-full left-4 right-4 mb-2 bg-white border border-neutral-100 rounded-xl shadow-lg z-40 overflow-hidden">
+              <button
+                onClick={() => {
+                  handleLogout();
+                  setUserMenuOpen(false);
+                }}
+                className="w-full text-left flex items-center gap-3 px-4 py-3 text-xs text-rose-500 hover:bg-rose-50 font-bold transition-colors border-none"
+              >
+                <LogOut className="w-4 h-4" />
+                安全退出系统
+              </button>
+            </div>
+          )}
         </div>
       </aside>
 
@@ -643,11 +665,14 @@ export default function App() {
       </header>
 
       {/* 2. Main content router stage */}
-      <main className={`flex-1 p-4 md:p-8 overflow-y-auto ${currentView === 'chat' ? '' : 'min-h-screen'}`}>
-
+      <main className="flex-1 p-4 md:p-8 overflow-y-auto">
+        
         {currentView === 'chat' && chatEnabled && (
           <ChatView />
         )}
+
+        {currentView !== 'chat' && (
+          <div className="min-h-screen">
 
         {currentView === 'dashboard' && (
           <Dashboard
@@ -777,6 +802,9 @@ export default function App() {
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
           </div>
         )}
 
