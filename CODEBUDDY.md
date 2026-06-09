@@ -98,5 +98,7 @@ Python 依赖（`pypdf`、`reportlab`）必须安装在系统 Python 中（`pip3
 - **样式**：Tailwind CSS v4 + `@tailwindcss/postcss`。无 UI 组件库 — 全程使用原生 Tailwind 类名。
 - **状态管理**：前端使用 React `useState`/`useEffect`（无 Redux/Zustand）。Supabase 作为持久化存储。
 - **构建输出**：`.next/` 目录。若 PDF 生成报字体错误，请检查 `pdfkit` 字体文件是否可通过 `process.cwd()` 访问。
-- **Git 工作流**：主分支为 `main`，远程为 `origin`。始终创建新提交；禁止使用 `git commit --amend`。禁止跳过 git hooks。不得修改 git 配置。
 - **每次改动后验证**：每次完成代码修改/重构后，必须使用 webapp-testing 技能对相关功能进行端到端验证，通过后再提交或报告结果。
+- 在没有用户明确说明的情况在，禁止私自进行git commit。
+- 测试相关的资源以及临时文件统一放在testing目录。
+- 禁止自行变更技术方案，如果确实需要变更技术方案需要得到用户确认后才可以执行。
