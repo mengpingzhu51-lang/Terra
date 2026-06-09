@@ -4,16 +4,19 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { 
-  User, 
-  Resume, 
-  JobDescription, 
-  Evaluation, 
-  GenerationRecord 
+import {
+  User,
+  Resume,
+  JobDescription,
+  Evaluation,
+  GenerationRecord
 } from './types';
 
 // Component imports
 import LoginScreen from './components/LoginScreen';
+
+// Mock user for bypass login mode
+import { MOCK_USER } from '@/lib/mock/user';
 import Dashboard from './components/Dashboard';
 import ResumeEditor from './components/ResumeEditor';
 import JobAnalysis from './components/JobAnalysis';
@@ -40,7 +43,15 @@ import {
 
 export default function App() {
   // 1. Session control state
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  // Check bypass login mode immediately during initialization
+  const getInitialUser = (): User | null => {
+    if (process.env.NEXT_PUBLIC_BYPASS_LOGIN === 'true') {
+      console.log('🚀 Bypass login mode enabled - using mock user');
+      return MOCK_USER;
+    }
+    return null;
+  };
+  const [currentUser, setCurrentUser] = useState<User | null>(getInitialUser());
 
   // 2. Navigation State
   const [currentView, setCurrentView] = useState<'dashboard' | 'resumes' | 'jds' | 'history' | 'edit_resume' | 'evaluate' | 'parse' | 'chat'>('dashboard');
@@ -63,7 +74,13 @@ export default function App() {
 
   // Loaded at startup
   useEffect(() => {
-    // Session restore
+    // In bypass mode, user is already set during initialization
+    // Skip session restore in bypass mode
+    if (process.env.NEXT_PUBLIC_BYPASS_LOGIN === 'true') {
+      return;
+    }
+
+    // Session restore (normal mode)
     const savedUser = localStorage.getItem('terra_user');
     if (savedUser) {
       try {
@@ -487,7 +504,7 @@ export default function App() {
     setCurrentView('evaluate');
   };
 
-  // If there's no active user session, direct load Login Screener
+  // If there's no active user session, show Login Screen
   if (!currentUser) {
     return <LoginScreen onLoginSuccess={handleLoginSuccess} />;
   }

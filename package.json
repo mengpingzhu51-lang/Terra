@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "next dev",
+    "dev:test": "BYPASS_LOGIN=true NEXT_PUBLIC_BYPASS_LOGIN=true next dev",
     "build": "next build",
     "start": "next start",
     "lint": "tsc --noEmit"
