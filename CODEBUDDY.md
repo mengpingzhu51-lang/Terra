@@ -99,6 +99,7 @@ Python 依赖（`pypdf`、`reportlab`）必须安装在系统 Python 中（`pip3
 - **状态管理**：前端使用 React `useState`/`useEffect`（无 Redux/Zustand）。Supabase 作为持久化存储。
 - **构建输出**：`.next/` 目录。若 PDF 生成报字体错误，请检查 `pdfkit` 字体文件是否可通过 `process.cwd()` 访问。
 - **每次改动后验证**：每次完成代码修改/重构后，必须使用 webapp-testing 技能对相关功能进行端到端验证，通过后再提交或报告结果。
-- 在没有用户明确说明的情况在，禁止私自进行git commit。
+- 在没有用户明确说明的情况在，禁止私自进行git commit，git commit
+  message要使用英文，避免中文。
 - 测试相关的资源以及临时文件统一放在testing目录。
 - 禁止自行变更技术方案，如果确实需要变更技术方案需要得到用户确认后才可以执行。
