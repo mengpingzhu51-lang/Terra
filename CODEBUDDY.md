@@ -50,7 +50,7 @@ lib/                  # 后端库代码（API 路由间共享）
   types.ts            # 后端专用类型别名（Resume、JobDescription 等）
 
 scripts/              # API 路由通过 child_process 调用的 Python 辅助脚本
-  parse_pdf.py        # 使用 pypdf 从 PDF 提取文本（已废弃，改用 Node.js pdf-parse）
+  parse_pdf.py        # 使用 pypdf 从 PDF 提取文本（Node.js pdf-parse 因 worker 问题无法在 Next.js 下工作）
   generate_resume_pdf.py  # 使用 reportlab 根据简历 JSON 生成 PDF
 
 src/                  # 旧版 React 源码（较旧的结构，部分仍在使用）
@@ -63,7 +63,7 @@ src/                  # 旧版 React 源码（较旧的结构，部分仍在使�
 ### 关键架构决策
 
 - **Next.js 15 App Router** — 所有 API 路由均声明 `export const runtime = "nodejs"`（因需使用 child_process）。
-- **PDF 解析** — `app/api/resume/parse/route.ts` 使用 Node.js `pdf-parse` 库直接从 PDF Buffer 中提取文本，不再依赖 Python `pypdf`。
+- **PDF 解析** — `app/api/resume/parse/route.ts` 通过 `child_process.spawn("python3", ...)` 调用 `scripts/parse_pdf.py`（`pypdf`）提取文本。Node.js `pdf-parse` 库因 `pdfjs-dist` worker 在 Next.js 下无法正确加载，故仍使用 Python 方案。
 - **PDF 生成** — `app/api/resume/generate-pdf/route.ts` 通过 `child_process.spawn("python3", ...)` 调用 `scripts/generate_resume_pdf.py`（reportlab）生成 PDF。Python 脚本必须存在且系统 Python 已安装 `reportlab`。
 - **OpenRouter 兼容** — `lib/agent/openrouter.ts` 在模块加载时将 `OPENROUTER_API_KEY` 映射到 `OPENAI_API_KEY`。所有 LLM 调用均通过配置了 `baseURL: https://openrouter.ai/api/v1` 的 `ChatOpenAI` 进行。切勿直接设置 `OPENAI_API_KEY`，映射逻辑已处理此问题。
 - **Supabase Auth** — 仅支持 Google Sign-In。认证流程使用 `@supabase/ssr` + cookies。`lib/supabase/middleware.ts` 处理会话刷新。不支持短信登录。
@@ -74,9 +74,10 @@ src/                  # 旧版 React 源码（较旧的结构，部分仍在使�
 
 两条独立的 PDF 处理路径：
 
-1. **解析**（`app/api/resume/parse/route.ts`，使用 `pdf-parse`）：
-   - 接收前端传来的 base64 PDF → 解码为 `Buffer` → `pdf-parse` 提取文本 → 将文本交由 LLM 结构化为 JSON。
-2. **生成**（`app/api/resume/generate-pdf/route.ts` → `scripts/generate_resume_pdf.py`）：
+1. **解析**（`app/api/resume/parse/route.ts` → `scripts/parse_pdf.py`，使用 `pypdf`）：
+   - 接收前端传来的 base64 PDF → 写入临时文件 → `pypdf.PdfReader` 提取文本 → 将文本交由 LLM 结构化为 JSON。
+   - 曾尝试迁移至 Node.js `pdf-parse`（基于 `pdfjs-dist`），但因 Next.js 下 `pdf.worker.mjs` 无法正确加载而放弃，继续使用 Python 方案。
+2. **生成**（`app/api/resume/generate-pdf/route.ts` → `scripts/generate_resume_pdf.py`，使用 `reportlab`）：
    - 接收简历 JSON → 写入临时 JSON 文件 → Python 脚本使用 `reportlab` 生成 PDF → 返回 PDF 字节流。
 
 ### 环境变量
